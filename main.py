@@ -1,0 +1,288 @@
+import sqlite3
+import os
+from datetime import datetime
+import tkinter as tk
+from tkinter import filedialog, messagebox, Toplevel
+from PIL import Image, ImageTk
+
+# مسیر دیتابیس
+db_path = "charity_database.db"
+
+def initialize_database():
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    c.execute('''CREATE TABLE IF NOT EXISTS families (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        case_number TEXT,
+        registration_date TEXT,
+        category TEXT,
+        head_name TEXT,
+        father_name TEXT,
+        grandfather_name TEXT,
+        birth_place TEXT,
+        age INTEGER,
+        tazkira_number TEXT,
+        education_level TEXT,
+        marital_status TEXT,
+        health_status TEXT,
+        job TEXT,
+        income REAL,
+        address TEXT,
+        phone TEXT,
+        photo_path TEXT
+    )''')
+
+    c.execute('''CREATE TABLE IF NOT EXISTS members (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        family_id INTEGER,
+        name TEXT,
+        father_name TEXT,
+        grandfather_name TEXT,
+        birth_place TEXT,
+        age INTEGER,
+        tazkira_number TEXT,
+        education_level TEXT,
+        marital_status TEXT,
+        health_status TEXT,
+        job TEXT,
+        income REAL,
+        photo_path TEXT,
+        FOREIGN KEY (family_id) REFERENCES families(id) ON DELETE CASCADE
+    )''')
+
+    conn.commit()
+    conn.close()
+
+initialize_database()
+
+root = tk.Tk()
+root.title("ثبت مشخصات خانواده - مؤسسه خیریه سیدالشهدا")
+root.geometry("950x720")
+root.configure(bg="#ECEFF1")
+
+FARSI_FONT = ("Bahij Nazanin", 12)
+TITLE_FONT = ("Bahij Titr", 16)
+
+title = tk.Label(root, text="فرم ثبت خانواده – مؤسسه خیریه سیدالشهدا", font=TITLE_FONT, bg="#ECEFF1", fg="#1A237E", pady=10)
+title.pack(fill="x")
+
+form_frame = tk.Frame(root, bg="#F5F5F5", padx=20, pady=20)
+form_frame.pack(fill="both", expand=True, padx=30, pady=10)
+
+form_data = {
+    "case_number": tk.StringVar(value=f"PR-{datetime.now().strftime('%Y%m%d%H%M%S')}"),
+    "registration_date": tk.StringVar(value=datetime.now().strftime("%Y-%m-%d")),
+    "category": tk.StringVar(value="عام"),
+    "head_name": tk.StringVar(),
+    "father_name": tk.StringVar(),
+    "grandfather_name": tk.StringVar(),
+    "birth_place": tk.StringVar(),
+    "age": tk.IntVar(),
+    "tazkira_number": tk.StringVar(),
+    "education_level": tk.StringVar(),
+    "marital_status": tk.StringVar(),
+    "health_status": tk.StringVar(),
+    "job": tk.StringVar(),
+    "income": tk.DoubleVar(),
+    "address": tk.StringVar(),
+    "phone": tk.StringVar(),
+    "photo_path": tk.StringVar()
+}
+
+def upload_image():
+    file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
+    if file_path:
+        form_data["photo_path"].set(file_path)
+        img = Image.open(file_path).resize((100, 120))
+        img = ImageTk.PhotoImage(img)
+        image_label.config(image=img)
+        image_label.image = img
+
+def save_record():
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    try:
+        c.execute('''
+            INSERT INTO families (
+                case_number, registration_date, category, head_name, father_name, grandfather_name,
+                birth_place, age, tazkira_number, education_level, marital_status,
+                health_status, job, income, address, phone, photo_path
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ''', tuple(var.get() for var in form_data.values()))
+        conn.commit()
+        family_id = c.lastrowid
+        messagebox.showinfo("ذخیره شد", "سرپرست ذخیره شد. حالا اعضای خانواده را وارد نمایید.")
+        open_members_form(family_id)
+    except Exception as e:
+        messagebox.showerror("خطا", f"خطا در ذخیره اطلاعات:\n{e}")
+    finally:
+        conn.close()
+
+labels = [
+    ("شماره پرونده:", "case_number"),
+    ("تاریخ ثبت:", "registration_date"),
+    ("دسته‌بندی:", "category"),
+    ("نام سرپرست:", "head_name"),
+    ("نام پدر:", "father_name"),
+    ("نام پدربزرگ:", "grandfather_name"),
+    ("محل تولد:", "birth_place"),
+    ("سن:", "age"),
+    ("شماره تذکره:", "tazkira_number"),
+    ("سطح تحصیل:", "education_level"),
+    ("وضعیت تأهل:", "marital_status"),
+    ("وضعیت صحی:", "health_status"),
+    ("وظیفه:", "job"),
+    ("عاید ماهانه:", "income"),
+    ("آدرس:", "address"),
+    ("شماره تماس:", "phone"),
+]
+
+for idx, (label_text, key) in enumerate(labels):
+    row = idx // 2
+    col = (idx % 2) * 2
+    tk.Label(form_frame, text=label_text, font=FARSI_FONT, bg="#F5F5F5").grid(row=row, column=col, sticky="e", pady=4, padx=4)
+    tk.Entry(form_frame, textvariable=form_data[key], font=FARSI_FONT, width=30).grid(row=row, column=col+1, sticky="w", pady=4, padx=4)
+
+image_frame = tk.Frame(form_frame, bg="#ECEFF1", width=140)
+image_frame.grid(row=0, column=4, rowspan=9, padx=10, sticky="n")
+
+default_img = Image.new('RGB', (100, 120), color='#CFD8DC')
+default_img = ImageTk.PhotoImage(default_img)
+image_label = tk.Label(image_frame, image=default_img, width=100, height=120, bg="#CFD8DC")
+image_label.image = default_img
+image_label.pack(pady=5)
+
+upload_btn = tk.Button(image_frame, text="آپلود عکس", command=upload_image, font=FARSI_FONT,
+                       bg="#00BCD4", fg="white", activebackground="#0097A7", relief="raised", bd=3, padx=10)
+upload_btn.pack(pady=10)
+
+save_btn = tk.Button(root, text="ذخیره اطلاعات", command=save_record,
+                     font=("Bahij Nazanin", 13), bg="#4CAF50", fg="white",
+                     activebackground="#388E3C", relief="raised", bd=4, padx=30, pady=10)
+save_btn.pack(pady=20)
+def open_members_form(family_id):
+    member_win = Toplevel(root)
+    member_win.title("ثبت اعضای خانواده")
+    member_win.geometry("1250x540")
+    member_win.configure(bg="#ECEFF1")
+    tk.Label(member_win, text="ثبت اعضای خانواده (حداکثر ۴ نفر)", font=TITLE_FONT, bg="#ECEFF1", fg="#1A237E").pack(pady=10)
+
+    container = tk.Frame(member_win, bg="#ECEFF1")
+    container.pack(padx=10, pady=10)
+
+    field_labels = [
+        "عکس", "عاید", "شغل", "وضعیت صحی", "وضعیت تأهل", "سطح تحصیل", "نمبر تذکره",
+        "سن", "محل تولد", "نام پدر کلان", "نام پدر", "نام"
+    ]
+
+    education_options = ["بیسواد", "ابتداییه", "فارغ 12", "بکلوریا", "لیسانس"]
+    marital_options = ["مجرد", "متاهل", "بیوه", "مطلقه"]
+
+    members_data = []
+
+    for row in range(4):
+        row_data = {}
+        for col, label_text in enumerate(field_labels):
+            tk.Label(container, text=label_text, font=FARSI_FONT, bg="#ECEFF1").grid(row=row*2, column=col, padx=4, pady=2, sticky='e')
+
+            if label_text == "عکس":
+                photo_var = tk.StringVar()
+                photo_label = tk.Label(container, text="تصویر ندارد", bg="#CFD8DC", width=14, relief="sunken")
+                photo_label.grid(row=row*2+1, column=col, padx=4)
+
+                def make_upload_cmd(lbl=photo_label, var=photo_var):
+                    def upload():
+                        file = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
+                        if file:
+                            var.set(file)
+                            lbl.config(text="عکس انتخاب شد", bg="#A5D6A7")
+                    return upload
+
+                upload_btn = tk.Button(container, text="آپلود", command=make_upload_cmd(), font=("Bahij Nazanin", 10))
+                upload_btn.grid(row=row*2+1, column=col, sticky="e", padx=2)
+                row_data["photo_path"] = photo_var
+
+            elif label_text == "سطح تحصیل":
+                edu_var = tk.StringVar()
+                dropdown = tk.OptionMenu(container, edu_var, *education_options)
+                dropdown.config(font=FARSI_FONT, width=12)
+                dropdown.grid(row=row*2+1, column=col)
+                row_data["education_level"] = edu_var
+
+            elif label_text == "وضعیت تأهل":
+                marital_var = tk.StringVar()
+                dropdown = tk.OptionMenu(container, marital_var, *marital_options)
+                dropdown.config(font=FARSI_FONT, width=12)
+                dropdown.grid(row=row*2+1, column=col)
+                row_data["marital_status"] = marital_var
+
+            elif label_text == "وضعیت صحی":
+                health_var = tk.StringVar()
+                entry = tk.Entry(container, textvariable=health_var, font=FARSI_FONT, width=14)
+                entry.insert(0, "سالم")
+                entry.grid(row=row*2+1, column=col)
+                row_data["health_status"] = health_var
+
+            else:
+                entry_var = tk.StringVar()
+                entry = tk.Entry(container, textvariable=entry_var, font=FARSI_FONT, width=14)
+                entry.grid(row=row*2+1, column=col)
+                key = {
+                    "نام": "name",
+                    "نام پدر": "father_name",
+                    "نام پدر کلان": "grandfather_name",
+                    "محل تولد": "birth_place",
+                    "سن": "age",
+                    "نمبر تذکره": "tazkira_number",
+                    "شغل": "job",
+                    "عاید": "income"
+                }[label_text]
+                row_data[key] = entry_var
+
+        members_data.append(row_data)
+
+    def save_members():
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        saved_count = 0
+        for row in members_data:
+            name = row.get("name").get().strip()
+            if name:
+                try:
+                    c.execute('''
+                        INSERT INTO members (
+                            family_id, name, father_name, grandfather_name, birth_place,
+                            age, tazkira_number, education_level, marital_status,
+                            health_status, job, income, photo_path
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ''', (
+                        family_id,
+                        row.get("name").get(),
+                        row.get("father_name").get(),
+                        row.get("grandfather_name").get(),
+                        row.get("birth_place").get(),
+                        int(row.get("age").get() or 0),
+                        row.get("tazkira_number").get(),
+                        row.get("education_level").get(),
+                        row.get("marital_status").get(),
+                        row.get("health_status").get(),
+                        row.get("job").get(),
+                        float(row.get("income").get() or 0),
+                        row.get("photo_path").get()
+                    ))
+                    saved_count += 1
+                except Exception as err:
+                    messagebox.showerror("خطا در ذخیره", f"خطا در ردیف {saved_count + 1}:\n{err}")
+        conn.commit()
+        conn.close()
+        messagebox.showinfo("ذخیره شد", f"{saved_count} عضو با موفقیت ذخیره شد.")
+        member_win.destroy()
+
+    save_btn = tk.Button(member_win, text="ذخیره اعضا", font=FARSI_FONT,
+                         bg="#4CAF50", fg="white", command=save_members,
+                         padx=30, pady=6)
+    save_btn.pack(pady=15)
+
+# اجرای نهایی
+root.mainloop()
