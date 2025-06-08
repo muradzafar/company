@@ -1,4 +1,9 @@
-
+try:
+    from PIL import Image, ImageTk
+    PIL_AVAILABLE = True
+except ImportError:  # pragma: no cover - optional dependency may be missing
+    PIL_AVAILABLE = False
+    Image = ImageTk = None
 import sqlite3
 import csv
 from datetime import datetime
@@ -44,16 +49,20 @@ def initialize_database():
         photo_path TEXT
     )''')
 
-    c.execute('''CREATE TABLE IF NOT EXISTS members (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        family_id INTEGER,
-        name TEXT,
-        father_name TEXT,
-        grandfather_name TEXT,
-        birth_place TEXT,
-        age INTEGER,
-        tazkira_number TEXT,
-        education_level TEXT,
+if PIL_AVAILABLE:
+    icon_img = Image.new("RGB", (16, 16), "#4CAF50")
+    root.iconphoto(False, ImageTk.PhotoImage(icon_img))
+def upload_image():
+    if not PIL_AVAILABLE:
+        messagebox.showerror("خطا", "کتابخانه Pillow نصب نیست. برای آپلود تصویر ابتدا آن را نصب نمایید.")
+        return
+    file_path = filedialog.askopenfilename(filetypes=[("Image Files", "*.png;*.jpg;*.jpeg")])
+    if file_path:
+        form_data["photo_path"].set(file_path)
+        img = Image.open(file_path).resize((100, 120))
+        img = ImageTk.PhotoImage(img)
+        image_label.config(image=img)
+        image_label.image = img
         marital_status TEXT,
         health_status TEXT,
         job TEXT,
@@ -167,12 +176,15 @@ def save_record():
                 case_number, registration_date, category, head_name, father_name, grandfather_name,
                 birth_place, age, tazkira_number, education_level, marital_status,
                 health_status, job, income, address, phone, photo_path
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        ''', tuple(var.get() for var in form_data.values()))
-        conn.commit()
-        family_id = c.lastrowid
-        messagebox.showinfo("ذخیره شد", "سرپرست ذخیره شد. حالا اعضای خانواده را وارد نمایید.")
-        open_members_form(family_id)
+image_frame.grid(row=0, column=4, rowspan=9, padx=10, sticky="n")
+
+if PIL_AVAILABLE:
+    default_img = Image.new("RGB", (100, 120), color="#CFD8DC")
+    default_img = ImageTk.PhotoImage(default_img)
+else:
+    default_img = tk.PhotoImage(width=100, height=120)
+image_label = tk.Label(image_frame, image=default_img, width=100, height=120, bg="#CFD8DC")
+image_label.image = default_img
     except Exception as e:
         messagebox.showerror("خطا", f"خطا در ذخیره اطلاعات:\n{e}")
     finally:
@@ -226,14 +238,36 @@ def export_to_csv():
     if not file_path:
         conn.close()
         return
+    category_var = tk.StringVar(value="همه")
+    # Category filter
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("SELECT DISTINCT category FROM families")
+    categories = [row[0] for row in c.fetchall()]
+    conn.close()
+    categories.insert(0, "همه")
+    tk.Label(search_frame, text="دسته‌بندی:", font=FARSI_FONT, bg="#F1F8E9").pack(side="right", padx=5)
+    category_menu = ttk.Combobox(search_frame, textvariable=category_var, values=categories, width=12, state="readonly")
+    category_menu.pack(side="right")
 
-    headers = [desc[0] for desc in c.description] + ["members"]
-    with open(file_path, "w", newline="", encoding="utf-8") as csvfile:
-        writer = csv.writer(csvfile)
-        writer.writerow(headers)
-        for fam in families:
-            c.execute("SELECT name FROM members WHERE family_id=?", (fam[0],))
-            member_names = [m[0] for m in c.fetchall()]
+    def load_data(query="", category="همه"):
+        if category and category != "همه":
+            c.execute(
+                """SELECT case_number, head_name, phone, registration_date
+                FROM families
+                WHERE (head_name LIKE ? OR case_number LIKE ? OR phone LIKE ?)
+                AND category=?""",
+                (wildcard, wildcard, wildcard, category),
+            )
+        else:
+            c.execute(
+                """SELECT case_number, head_name, phone, registration_date
+                FROM families
+                WHERE head_name LIKE ? OR case_number LIKE ? OR phone LIKE ?""",
+                (wildcard, wildcard, wildcard),
+            )
+        load_data(search_var.get(), category_var.get())
+    category_menu.bind("<<ComboboxSelected>>", on_search)
             writer.writerow(list(fam) + [";".join(member_names)])
     conn.close()
     messagebox.showinfo("ذخیره شد", "خروجی با موفقیت ذخیره شد.")
