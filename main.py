@@ -242,6 +242,7 @@ export_btn = tk.Button(
     pady=10,
 )
 export_btn.pack(pady=(0, 20))
+ l0f02q-codex/work-on-main.py
 
 def open_family_list():
     """Open a window displaying all saved families with search."""
@@ -326,6 +327,7 @@ list_btn = tk.Button(
 )
 list_btn.pack(pady=(0, 20))
 
+ main
 def open_members_form(family_id):
     member_win = Toplevel(root)
     member_win.title("ثبت اعضای خانواده")
