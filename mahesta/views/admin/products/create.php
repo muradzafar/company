@@ -13,5 +13,6 @@
             <input type="number" step="0.01" name="price" class="form-control" required>
         </div>
         <button type="submit" class="btn btn-primary w-100">Save</button>
+        <a href="<?php echo Core\Auth::baseUrl('/admin/products'); ?>" class="d-block text-center mt-3">Back to list</a>
     </form>
 </div>

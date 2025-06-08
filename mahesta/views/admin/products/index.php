@@ -1,7 +1,10 @@
 <div class="container py-5">
-    <div class="d-flex justify-content-between mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3">
         <h2>Products</h2>
-        <a href="<?php echo Core\Auth::baseUrl('/admin/products/create'); ?>" class="btn btn-success">Add Product</a>
+        <div>
+            <a href="<?php echo Core\Auth::baseUrl('/admin/products/create'); ?>" class="btn btn-success me-2">Add Product</a>
+            <a href="<?php echo Core\Auth::baseUrl('/admin'); ?>" class="btn btn-secondary">Dashboard</a>
+        </div>
     </div>
     <?php if (empty($products)): ?>
         <p>No products found.</p>

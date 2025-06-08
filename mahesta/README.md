@@ -41,3 +41,4 @@ php -S localhost:8000 -t mahesta
 ```
 
 Then visit `http://localhost:8000/mahesta` in your browser.
+The admin panel is available at `http://localhost:8000/mahesta/admin`.

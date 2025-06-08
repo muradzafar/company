@@ -13,5 +13,6 @@
             <input type="password" name="password" class="form-control" required>
         </div>
         <button type="submit" class="btn btn-primary w-100">Login</button>
+        <a href="<?php echo Core\Auth::baseUrl(); ?>" class="d-block text-center mt-3">Back to site</a>
     </form>
 </div>
