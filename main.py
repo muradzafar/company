@@ -242,6 +242,90 @@ export_btn = tk.Button(
     pady=10,
 )
 export_btn.pack(pady=(0, 20))
+
+def open_family_list():
+    """Open a window displaying all saved families with search."""
+    win = Toplevel(root)
+    win.title("لیست خانواده‌ها")
+    win.geometry("900x600")
+    win.configure(bg="#F1F8E9")
+
+    search_var = tk.StringVar()
+    search_frame = tk.Frame(win, bg="#F1F8E9")
+    search_frame.pack(fill="x", pady=10)
+    tk.Label(search_frame, text="جستجو:", font=FARSI_FONT, bg="#F1F8E9").pack(side="right", padx=5)
+    search_entry = tk.Entry(search_frame, textvariable=search_var, font=FARSI_FONT, width=30)
+    search_entry.pack(side="right", padx=5)
+
+    cols = ("case", "head", "phone", "reg_date")
+    tree = ttk.Treeview(win, columns=cols, show="headings", selectmode="browse")
+    tree.heading("case", text="شماره پرونده")
+    tree.heading("head", text="نام سرپرست")
+    tree.heading("phone", text="تلفن")
+    tree.heading("reg_date", text="تاریخ ثبت")
+    tree.column("case", anchor="center", width=120)
+    tree.column("head", anchor="center", width=160)
+    tree.column("phone", anchor="center", width=120)
+    tree.column("reg_date", anchor="center", width=120)
+    scrollbar = ttk.Scrollbar(win, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=scrollbar.set)
+    tree.pack(side="left", fill="both", expand=True, padx=(10,0), pady=10)
+    scrollbar.pack(side="left", fill="y", pady=10)
+
+    def load_data(query=""):
+        conn = sqlite3.connect(db_path)
+        c = conn.cursor()
+        wildcard = f"%{query}%"
+        c.execute(
+            """SELECT case_number, head_name, phone, registration_date
+            FROM families
+            WHERE head_name LIKE ? OR case_number LIKE ? OR phone LIKE ?""",
+            (wildcard, wildcard, wildcard),
+        )
+        rows = c.fetchall()
+        conn.close()
+
+        tree.delete(*tree.get_children())
+        for row in rows:
+            tree.insert("", "end", values=row)
+
+    load_data()
+
+    def on_search(*_):
+        load_data(search_var.get())
+
+    search_entry.bind("<KeyRelease>", on_search)
+
+    close_btn = tk.Button(
+        win,
+        text="بستن",
+        command=win.destroy,
+        font=FARSI_FONT,
+        bg="#EF5350",
+        fg="white",
+        activebackground="#E53935",
+        relief="raised",
+        bd=3,
+        padx=20,
+        pady=5,
+    )
+    close_btn.pack(pady=10)
+
+list_btn = tk.Button(
+    root,
+    text="مشاهده خانواده‌ها",
+    command=open_family_list,
+    font=FARSI_FONT,
+    bg="#673AB7",
+    fg="white",
+    activebackground="#512DA8",
+    relief="raised",
+    bd=4,
+    padx=30,
+    pady=10,
+)
+list_btn.pack(pady=(0, 20))
+
 def open_members_form(family_id):
     member_win = Toplevel(root)
     member_win.title("ثبت اعضای خانواده")
