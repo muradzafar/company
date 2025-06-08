@@ -1,0 +1,18 @@
+<div class="container py-5" style="max-width:400px;">
+    <h2 class="mb-4">Admin Login</h2>
+    <?php if (!empty($error)): ?>
+    <div class="alert alert-danger"><?php echo htmlspecialchars($error); ?></div>
+    <?php endif; ?>
+    <form method="post">
+        <div class="mb-3">
+            <label class="form-label">Username</label>
+            <input type="text" name="username" class="form-control" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Password</label>
+            <input type="password" name="password" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Login</button>
+        <a href="<?php echo Core\Auth::baseUrl(); ?>" class="d-block text-center mt-3">Back to site</a>
+    </form>
+</div>
