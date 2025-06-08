@@ -29,10 +29,7 @@ class AdminController
         $productCount = $pdo->query('SELECT COUNT(*) FROM products')->fetchColumn();
         $title = 'Admin Dashboard';
         require __DIR__ . '/../templates/header.php';
-        echo '<div class="container py-5">';
-        echo '<h1 class="mb-4">Admin Dashboard</h1>';
-        echo '<div class="alert alert-info">Total products: ' . $productCount . '</div>';
-        echo '</div>';
+        require __DIR__ . '/../views/admin/dashboard.php';
         require __DIR__ . '/../templates/footer.php';
     }
 
