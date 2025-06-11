@@ -322,22 +322,14 @@ def open_help_list():
     win = Toplevel(root)
     win.title("لیست کمک")
     win.geometry("900x550")
-    win.configure(bg="#FFFDE7")
+    win.configure(bg="#F5F5F5")
 
-    container = tk.Frame(win, bg="#FFFDE7")
-    container.pack(fill="both", expand=True, padx=10, pady=10)
+    frame = tk.Frame(win, bg="#F5F5F5")
+    frame.pack(fill="both", expand=True, padx=10, pady=10)
 
     cols = ("num", "head", "father", "count", "phone", "sign")
-
-    style.configure(
-        "HelpTreeview",
-        rowheight=40,
-        font=FARSI_FONT,
-    )
-    style.configure("HelpTreeview.Heading", font=FARSI_FONT)
-
-    tree = ttk.Treeview(container, columns=cols, show="headings", style="HelpTreeview")
-    headings = {
+    tree = ttk.Treeview(frame, columns=cols, show="headings")
+    headers = {
         "num": "شماره",
         "head": "اسم سرپرست",
         "father": "اسم پدر",
@@ -345,19 +337,18 @@ def open_help_list():
         "phone": "نمبر تماس",
         "sign": "امضا",
     }
-    for c in cols:
-        tree.heading(c, text=headings[c], anchor="center")
-        tree.column(c, anchor="center", width=100)
+    for col in cols:
+        tree.heading(col, text=headers[col])
+        tree.column(col, anchor="center", width=120, stretch=True)
 
-    tree.tag_configure("odd", background="#FFFDE7")
-    tree.tag_configure("even", background="#F0F4C3")
-
-    vsb = ttk.Scrollbar(container, orient="vertical", command=tree.yview)
-    tree.configure(yscrollcommand=vsb.set)
+    vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
+    hsb = ttk.Scrollbar(frame, orient="horizontal", command=tree.xview)
+    tree.configure(yscrollcommand=vsb.set, xscrollcommand=hsb.set)
     tree.grid(row=0, column=0, sticky="nsew")
     vsb.grid(row=0, column=1, sticky="ns")
-    container.grid_rowconfigure(0, weight=1)
-    container.grid_columnconfigure(0, weight=1)
+    hsb.grid(row=1, column=0, sticky="ew")
+    frame.grid_rowconfigure(0, weight=1)
+    frame.grid_columnconfigure(0, weight=1)
 
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -366,13 +357,7 @@ def open_help_list():
     for idx, (fid, head, father, phone) in enumerate(families, start=1):
         c.execute("SELECT COUNT(*) FROM members WHERE family_id=?", (fid,))
         count = c.fetchone()[0] + 1
-        tag = "even" if idx % 2 == 0 else "odd"
-        tree.insert(
-            "",
-            "end",
-            values=(idx, head, father, count, phone, ""),
-            tags=(tag,),
-        )
+        tree.insert("", "end", values=(idx, head, father, count, phone, ""))
     conn.close()
 
     def print_list():
@@ -391,7 +376,7 @@ def open_help_list():
             except Exception:
                 messagebox.showinfo("چاپ", f"فایل در {file} ذخیره شد")
 
-    btn_frame = tk.Frame(win, bg="#FFFDE7")
+    btn_frame = tk.Frame(win, bg="#F5F5F5")
     btn_frame.pack(fill="x", pady=10)
     print_btn = tk.Button(
         btn_frame,
