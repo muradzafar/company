@@ -5,6 +5,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, Toplevel
 from tkinter import ttk
 from PIL import Image, ImageTk
+import os
 
 # مسیر دیتابیس
 db_path = "charity_database.db"
@@ -311,6 +312,89 @@ def open_family_list():
     )
     close_btn.pack(pady=10)
 
+def open_help_list():
+    """Open a window showing supervisors for assistance distribution."""
+    win = Toplevel(root)
+    win.title("لیست کمک")
+    win.geometry("950x600")
+    win.configure(bg="#FFFDE7")
+
+    cols = ("num", "head", "father", "count", "phone", "sign")
+    tree = ttk.Treeview(win, columns=cols, show="headings")
+    tree.heading("num", text="شماره")
+    tree.heading("head", text="اسم سرپرست")
+    tree.heading("father", text="اسم پدر")
+    tree.heading("count", text="تعداد فامیل")
+    tree.heading("phone", text="نمبر تماس")
+    tree.heading("sign", text="امضا")
+    tree.column("num", anchor="center", width=60)
+    tree.column("head", anchor="center", width=150)
+    tree.column("father", anchor="center", width=150)
+    tree.column("count", anchor="center", width=100)
+    tree.column("phone", anchor="center", width=120)
+    tree.column("sign", anchor="center", width=120)
+    scrollbar = ttk.Scrollbar(win, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=scrollbar.set)
+    tree.pack(side="left", fill="both", expand=True, padx=(10,0), pady=10)
+    scrollbar.pack(side="left", fill="y", pady=10)
+
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("SELECT id, head_name, father_name, phone FROM families")
+    families = c.fetchall()
+    for idx, (fid, head, father, phone) in enumerate(families, start=1):
+        c.execute("SELECT COUNT(*) FROM members WHERE family_id=?", (fid,))
+        count = c.fetchone()[0] + 1
+        tree.insert("", "end", values=(idx, head, father, count, phone, ""))
+    conn.close()
+
+    def print_list():
+        file = filedialog.asksaveasfilename(
+            defaultextension=".ps",
+            filetypes=[("PostScript", "*.ps")],
+        )
+        if file:
+            win.update()
+            win.postscript(file=file)
+            try:
+                if os.name == "nt":
+                    os.startfile(file, "print")
+                else:
+                    os.system(f"lp '{file}'")
+            except Exception:
+                messagebox.showinfo("چاپ", f"فایل در {file} ذخیره شد")
+
+    btn_frame = tk.Frame(win, bg="#FFFDE7")
+    btn_frame.pack(fill="x", pady=10)
+    print_btn = tk.Button(
+        btn_frame,
+        text="چاپ",
+        command=print_list,
+        font=FARSI_FONT,
+        bg="#4CAF50",
+        fg="white",
+        activebackground="#388E3C",
+        relief="raised",
+        bd=3,
+        padx=20,
+        pady=5,
+    )
+    print_btn.pack(side="right", padx=5)
+    close_btn = tk.Button(
+        btn_frame,
+        text="بستن",
+        command=win.destroy,
+        font=FARSI_FONT,
+        bg="#EF5350",
+        fg="white",
+        activebackground="#E53935",
+        relief="raised",
+        bd=3,
+        padx=20,
+        pady=5,
+    )
+    close_btn.pack(side="right", padx=5)
+
 list_btn = tk.Button(
     root,
     text="مشاهده خانواده‌ها",
@@ -325,6 +409,21 @@ list_btn = tk.Button(
     pady=10,
 )
 list_btn.pack(pady=(0, 20))
+
+help_btn = tk.Button(
+    root,
+    text="لیست کمک",
+    command=open_help_list,
+    font=FARSI_FONT,
+    bg="#009688",
+    fg="white",
+    activebackground="#00796B",
+    relief="raised",
+    bd=4,
+    padx=30,
+    pady=10,
+)
+help_btn.pack(pady=(0, 20))
 
 def open_members_form(family_id):
     member_win = Toplevel(root)
