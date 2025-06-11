@@ -324,24 +324,40 @@ def open_help_list():
     win.geometry("950x600")
     win.configure(bg="#FFFDE7")
 
-    cols = ("num", "head", "father", "count", "phone", "sign")
-    tree = ttk.Treeview(win, columns=cols, show="headings")
-    tree.heading("num", text="شماره")
-    tree.heading("head", text="اسم سرپرست")
-    tree.heading("father", text="اسم پدر")
-    tree.heading("count", text="تعداد فامیل")
-    tree.heading("phone", text="نمبر تماس")
-    tree.heading("sign", text="امضا")
+    cols = ("sign", "phone", "count", "father", "head", "num")
+
+    style.configure(
+        "HelpTreeview",
+        rowheight=46,
+        font=FARSI_FONT,
+    )
+    style.configure("HelpTreeview.Heading", font=FARSI_FONT)
+
+    tree = ttk.Treeview(win, columns=cols, show="headings", style="HelpTreeview")
+    headings = {
+        "num": "شماره",
+        "head": "اسم سرپرست",
+        "father": "اسم پدر",
+        "count": "تعداد فامیل",
+        "phone": "نمبر تماس",
+        "sign": "امضا",
+    }
+    for c in cols:
+        tree.heading(c, text=headings[c], anchor="center")
     tree.column("num", anchor="center", width=60)
     tree.column("head", anchor="center", width=150)
     tree.column("father", anchor="center", width=150)
     tree.column("count", anchor="center", width=100)
     tree.column("phone", anchor="center", width=120)
     tree.column("sign", anchor="center", width=120)
+
+    tree.tag_configure("odd", background="#FFFDE7")
+    tree.tag_configure("even", background="#F0F4C3")
+
     scrollbar = ttk.Scrollbar(win, orient="vertical", command=tree.yview)
     tree.configure(yscrollcommand=scrollbar.set)
-    tree.pack(side="left", fill="both", expand=True, padx=(10,0), pady=10)
-    scrollbar.pack(side="left", fill="y", pady=10)
+    tree.pack(side="right", fill="both", expand=True, padx=(0,10), pady=10)
+    scrollbar.pack(side="right", fill="y", pady=10)
 
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -350,7 +366,13 @@ def open_help_list():
     for idx, (fid, head, father, phone) in enumerate(families, start=1):
         c.execute("SELECT COUNT(*) FROM members WHERE family_id=?", (fid,))
         count = c.fetchone()[0] + 1
-        tree.insert("", "end", values=(idx, head, father, count, phone, ""))
+        tag = "even" if idx % 2 == 0 else "odd"
+        tree.insert(
+            "",
+            "end",
+            values=("", phone, count, father, head, idx),
+            tags=(tag,),
+        )
     conn.close()
 
     def print_list():
