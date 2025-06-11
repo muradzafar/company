@@ -327,8 +327,11 @@ def open_help_list():
     frame = tk.Frame(win, bg="#F5F5F5")
     frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-    cols = ("num", "head", "father", "count", "phone", "sign")
-    tree = ttk.Treeview(frame, columns=cols, show="headings")
+    style = ttk.Style(win)
+    style.configure("Help.Treeview", rowheight=46)
+
+    cols = ("sign", "phone", "count", "father", "head", "num")
+    tree = ttk.Treeview(frame, columns=cols, show="headings", style="Help.Treeview")
     headers = {
         "num": "شماره",
         "head": "اسم سرپرست",
@@ -357,7 +360,7 @@ def open_help_list():
     for idx, (fid, head, father, phone) in enumerate(families, start=1):
         c.execute("SELECT COUNT(*) FROM members WHERE family_id=?", (fid,))
         count = c.fetchone()[0] + 1
-        tree.insert("", "end", values=(idx, head, father, count, phone, ""))
+        tree.insert("", "end", values=("", phone, count, father, head, idx))
     conn.close()
 
     def print_list():
@@ -376,6 +379,20 @@ def open_help_list():
             except Exception:
                 messagebox.showinfo("چاپ", f"فایل در {file} ذخیره شد")
 
+    def export_csv():
+        file_path = filedialog.asksaveasfilename(
+            defaultextension=".csv",
+            filetypes=[("CSV Files", "*.csv")],
+        )
+        if not file_path:
+            return
+        with open(file_path, "w", newline="", encoding="utf-8") as csvfile:
+            writer = csv.writer(csvfile)
+            writer.writerow([headers[c] for c in cols])
+            for row_id in tree.get_children():
+                writer.writerow(tree.item(row_id)["values"])
+        messagebox.showinfo("ذخیره شد", "فایل CSV ذخیره شد")
+
     btn_frame = tk.Frame(win, bg="#F5F5F5")
     btn_frame.pack(fill="x", pady=10)
     print_btn = tk.Button(
@@ -392,6 +409,21 @@ def open_help_list():
         pady=5,
     )
     print_btn.pack(side="right", padx=5)
+
+    export_btn = tk.Button(
+        btn_frame,
+        text="خروجی به CSV",
+        command=export_csv,
+        font=FARSI_FONT,
+        bg="#2196F3",
+        fg="white",
+        activebackground="#1976D2",
+        relief="raised",
+        bd=3,
+        padx=20,
+        pady=5,
+    )
+    export_btn.pack(side="right", padx=5)
     close_btn = tk.Button(
         btn_frame,
         text="بستن",
