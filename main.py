@@ -321,19 +321,22 @@ def open_help_list():
     """Open a window showing supervisors for assistance distribution."""
     win = Toplevel(root)
     win.title("لیست کمک")
-    win.geometry("950x600")
+    win.geometry("900x550")
     win.configure(bg="#FFFDE7")
 
-    cols = ("sign", "phone", "count", "father", "head", "num")
+    container = tk.Frame(win, bg="#FFFDE7")
+    container.pack(fill="both", expand=True, padx=10, pady=10)
+
+    cols = ("num", "head", "father", "count", "phone", "sign")
 
     style.configure(
         "HelpTreeview",
-        rowheight=46,
+        rowheight=40,
         font=FARSI_FONT,
     )
     style.configure("HelpTreeview.Heading", font=FARSI_FONT)
 
-    tree = ttk.Treeview(win, columns=cols, show="headings", style="HelpTreeview")
+    tree = ttk.Treeview(container, columns=cols, show="headings", style="HelpTreeview")
     headings = {
         "num": "شماره",
         "head": "اسم سرپرست",
@@ -344,20 +347,17 @@ def open_help_list():
     }
     for c in cols:
         tree.heading(c, text=headings[c], anchor="center")
-    tree.column("num", anchor="center", width=60)
-    tree.column("head", anchor="center", width=150)
-    tree.column("father", anchor="center", width=150)
-    tree.column("count", anchor="center", width=100)
-    tree.column("phone", anchor="center", width=120)
-    tree.column("sign", anchor="center", width=120)
+        tree.column(c, anchor="center", width=100)
 
     tree.tag_configure("odd", background="#FFFDE7")
     tree.tag_configure("even", background="#F0F4C3")
 
-    scrollbar = ttk.Scrollbar(win, orient="vertical", command=tree.yview)
-    tree.configure(yscrollcommand=scrollbar.set)
-    tree.pack(side="right", fill="both", expand=True, padx=(0,10), pady=10)
-    scrollbar.pack(side="right", fill="y", pady=10)
+    vsb = ttk.Scrollbar(container, orient="vertical", command=tree.yview)
+    tree.configure(yscrollcommand=vsb.set)
+    tree.grid(row=0, column=0, sticky="nsew")
+    vsb.grid(row=0, column=1, sticky="ns")
+    container.grid_rowconfigure(0, weight=1)
+    container.grid_columnconfigure(0, weight=1)
 
     conn = sqlite3.connect(db_path)
     c = conn.cursor()
@@ -370,7 +370,7 @@ def open_help_list():
         tree.insert(
             "",
             "end",
-            values=("", phone, count, father, head, idx),
+            values=(idx, head, father, count, phone, ""),
             tags=(tag,),
         )
     conn.close()
