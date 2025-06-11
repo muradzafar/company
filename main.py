@@ -201,6 +201,7 @@ image_label = tk.Label(image_frame, image=default_img, width=100, height=120, bg
 image_label.image = default_img
 image_label.pack(pady=5)
 
+
 upload_btn = tk.Button(
     image_frame,
     text="آپلود عکس",
@@ -215,8 +216,12 @@ upload_btn = tk.Button(
 )
 upload_btn.pack(pady=10)
 
+# Frame to hold action buttons in a single row
+action_frame = tk.Frame(root, bg="#E3F2FD")
+action_frame.pack(pady=20)
+
 save_btn = tk.Button(
-    root,
+    action_frame,
     text="ذخیره اطلاعات",
     command=save_record,
     font=FARSI_FONT,
@@ -228,7 +233,7 @@ save_btn = tk.Button(
     padx=30,
     pady=10,
 )
-save_btn.pack(pady=20)
+save_btn.pack(side="left", padx=10)
 export_btn = tk.Button(
     root,
     text="خروجی به CSV",
@@ -411,7 +416,7 @@ list_btn = tk.Button(
 list_btn.pack(pady=(0, 20))
 
 help_btn = tk.Button(
-    root,
+    action_frame,
     text="لیست کمک",
     command=open_help_list,
     font=FARSI_FONT,
@@ -423,7 +428,7 @@ help_btn = tk.Button(
     padx=30,
     pady=10,
 )
-help_btn.pack(pady=(0, 20))
+help_btn.pack(side="left", padx=10)
 
 def open_members_form(family_id):
     member_win = Toplevel(root)
